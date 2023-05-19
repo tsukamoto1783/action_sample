@@ -79,4 +79,4 @@ jobs:
           header: coverage-summary
           message: |
             Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>  
-            coverage: ${{ steps.coverage-summary.outputs.content }}
+            coverage: ${{ steps.coverage-summary.outputs.summary }}
