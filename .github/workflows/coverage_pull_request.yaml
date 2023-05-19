@@ -54,17 +54,18 @@ jobs:
         run: |
           cat coverage/coverage-list.txt
 
+      # カバレッジのサマリーを読み取る
       - name: Read coverage summary
         id: coverage-summary
-        uses: juliangruber/read-file-action@v1
-        with:
-          path: coverage/coverage-list.txt
+        run: |
+          summary=$(grep 'lines......:' coverage/coverage-list.txt)
+          echo "::set-output name=summary::$summary"
 
+      # PRにカバレッジのサマリーをコメントする
       - name: Comment Coverage Summary
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          header: coverage-summary
-          message: |
-            ## Coverage Summary
-            ${{ steps.coverage-summary }}
+          message: ${{ steps.coverage-summary.outputs.summary }}
+          reaction-type: hooray
+          stick: true
