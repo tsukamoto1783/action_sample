@@ -10,6 +10,8 @@ jobs:
   static_analysis_and_unit_testing:
     name: PR comment
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     timeout-minutes: 10
     steps:
       # ソースコードをチェックアウト
@@ -60,11 +62,18 @@ jobs:
         with:
           path: coverage/coverage-list.txt
 
-      # PRにカバレッジのサマリーをコメントする
-      - name: Comment Coverage Summary
+      # # PRにカバレッジのサマリーをコメントする
+      # - name: Comment Coverage Summary
+      #   uses: marocchino/sticky-pull-request-comment@v2
+      #   with:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     message: ${{ steps.coverage-summary.outputs.summary }}
+      #     reaction-type: hooray
+      #     stick: true
+
+
+      - name: Comment test
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          message: ${{ steps.coverage-summary.outputs.summary }}
-          reaction-type: hooray
-          stick: true
+          message: |
+            Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>
