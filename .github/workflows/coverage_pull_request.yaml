@@ -1,4 +1,4 @@
-name: Static Analysis and Unit Testing
+name: PR comment
 on:
   # PRが作成or更新された時
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   static_analysis_and_unit_testing:
-    name: Static Analysis and Unit Testing
+    name: PR comment
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -54,12 +54,11 @@ jobs:
         run: |
           cat coverage/coverage-list.txt
 
-      # カバレッジのサマリーを読み取る
       - name: Read coverage summary
         id: coverage-summary
-        run: |
-          summary=$(grep 'lines......:' coverage/coverage-list.txt)
-          echo "::set-output name=summary::$summary"
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: coverage/coverage-list.txt
 
       # PRにカバレッジのサマリーをコメントする
       - name: Comment Coverage Summary
