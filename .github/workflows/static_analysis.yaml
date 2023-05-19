@@ -1,0 +1,91 @@
+name: Static Analysis and Unit Testing
+on:
+  # PRが作成or更新された時
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+  # main ブランチに push された時
+  push:
+    branches:
+      - main
+
+jobs:
+  static_analysis_and_unit_testing:
+    name: Static Analysis and Unit Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # ソースコードをチェックアウト
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # fvm のバージョンとチャネルを環境変数に設定する
+      - name: Check fvm
+        uses: kuhnroyal/flutter-fvm-config-action@v1
+
+      # Flutter SDK の設定
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          # バージョンとチャネルは fvm の値を使う
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          # 次回以降起動を速くするためにキャッシュしておく
+          cache: true
+          cache-key: flutter
+          cache-path: ${{ runner.tool_cache }}/flutter
+
+      # flutter pub get を実行
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # コードフォーマットを実行
+      # フォーマットの結果変更が発生した場合はエラー扱いにする
+      - name: Run Flutter format
+        run: dart format -o none --set-exit-if-changed .
+
+      # 静的解析を実行
+      - name: Run Flutter Analyze
+        run: flutter analyze
+
+      # テストを実行
+      - name: Run Flutter Test
+        run: flutter test --coverage --machine > test-report.log
+
+      # テスト結果を GitHub Actions に表示する
+      - name: Report Test
+        uses: dorny/test-reporter@v1
+        # テスト結果を表示するのでテストが失敗しても実行する
+        if: always()
+        with:
+          name: Flutter Test Report
+          path: test-report.log
+          reporter: flutter-json
+
+      # lcov パッケージをインストール
+      - name: Install lcov package
+        run: sudo apt-get install lcov -y
+
+      # lcov.info を HTML に変換
+      - name: Convert lcov.info to HTML
+        run: genhtml coverage/lcov.info -o coverage/html
+
+      # ファイル保存&詳細用
+      # カバレッジレポートをアップロード
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: code-coverage
+          path: coverage/html
+
+      # カバレッジ率の詳細をテキスト形式で出力
+      - name: Generate lcov Text Coverage Report
+        run: |
+          lcov -l coverage/lcov.info > coverage/coverage-list.txt
+
+      # カバレッジ率をジョブログに表示
+      - name: Display Coverage Report
+        run: |
+          cat coverage/coverage-list.txt
