@@ -77,4 +77,5 @@ jobs:
         with:
           message: |
             Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>  
-            ${{ steps.package.outputs.content }}
+            Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>  
+            coverage:  ${{ steps.package.outputs.content }}
