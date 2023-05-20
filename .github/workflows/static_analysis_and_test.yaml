@@ -1,24 +1,23 @@
-name: PR comment
+name: Static Analysis and Testing
 on:
-  # PRが作成or更新された時
+  # PRが作成or更新された時に実行
   pull_request:
     types:
       - opened
       - synchronize
 
 jobs:
-  static_analysis_and_unit_testing:
-    name: PR comment
+  static_analysis_and_testing:
+    name: Static Analysis and Testing
+    # osはubuntuだと高い？
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     timeout-minutes: 10
     steps:
       # ソースコードをチェックアウト
       - name: Checkout
         uses: actions/checkout@v3
 
-      # fvm のバージョンとチャネルを環境変数に設定する
+      # fvm のバージョンとチャネルを環境変数に設定
       - name: Check fvm
         uses: kuhnroyal/flutter-fvm-config-action@v1
 
@@ -38,45 +37,69 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
+      # コードフォーマットを実行
+      # フォーマットの結果変更が発生した場合はエラー扱いにする
+      - name: Run Flutter format
+        run: dart format -o none --set-exit-if-changed .
+
+      # 静的解析を実行
+      - name: Run Flutter Analyze
+        run: flutter analyze
+
       # テストを実行
       - name: Run Flutter Test
         run: flutter test --coverage --machine > test-report.log
+
+      # テスト結果を GitHub Actions に表示する
+      - name: Report Flutter Test Results
+        uses: dorny/test-reporter@v1
+        # テスト結果を表示するのでテストが失敗しても実行する
+        if: always()
+        with:
+          name: Flutter Test Report
+          path: test-report.log
+          reporter: flutter-json
 
       # lcov パッケージをインストール
       - name: Install lcov package
         run: sudo apt-get install lcov -y
 
-      # カバレッジ率の詳細をテキスト形式で出力
+      # lcov.info を HTML に変換
+      - name: Convert lcov.info to HTML
+        run: genhtml coverage/lcov.info -o coverage/html
+
+      # ファイル保存&詳細用
+      # カバレッジレポートをアップロード（htmlでの詳細ログ）
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: code-coverage
+          path: coverage/html
+
+      # カバレッジレポートをテキスト形式で出力
       - name: Generate lcov Text Coverage Report
         run: |
           lcov -l coverage/lcov.info > coverage/coverage-list.txt
 
-      # カバレッジ率をジョブログに表示
+      # カバレッジレポートログに表示
       - name: Display Coverage Report
         run: |
           cat coverage/coverage-list.txt
-
-      - name: Read coverage summary
-        id: coverage-summary
+      
+      # .txt出力したカバレッジレポートの読み込み
+      - name: Read Coverage List
+        # 読み込み結果を"coverage-list"という変数に格納
+        id: coverage-list
         uses: juliangruber/read-file-action@v1
         with:
           path: coverage/coverage-list.txt
 
-      # # PRにカバレッジのサマリーをコメントする
-      # - name: Comment Coverage Summary
-      #   uses: marocchino/sticky-pull-request-comment@v2
-      #   with:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     message: ${{ steps.coverage-summary.outputs.summary }}
-      #     reaction-type: hooray
-      #     stick: true
-
-
-      - name: Comment test
+      # カバレッジレポートをPRにコメントとして表示
+      - name: Show PR Comment Coverage
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          header: coverage-summary
+          header: coverage-list
           message: |
             Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>  
             coverage: 
