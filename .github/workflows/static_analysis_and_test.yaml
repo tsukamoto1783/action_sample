@@ -103,5 +103,5 @@ jobs:
           message: |
             **【coverage】**  
             ```
-            ${{ steps.coverage-summary.outputs.content }}
+            ${{ steps.coverage-list.outputs.content }}
             ```
