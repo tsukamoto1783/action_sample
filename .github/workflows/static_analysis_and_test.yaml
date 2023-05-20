@@ -101,8 +101,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           header: coverage-list
           message: |
-            Release ${{ github.sha }} to <https://pr-${{ github.event.number }}.example.com>  
-            coverage: 
+            **【coverage】**  
             ```
             ${{ steps.coverage-summary.outputs.content }}
             ```
