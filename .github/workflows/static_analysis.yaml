@@ -84,4 +84,4 @@ jobs:
       # カバレッジ率をジョブログに表示
       - name: Display Coverage Report
         run: |
-          cat coverage/test-report.log
+          cat test-report.log
