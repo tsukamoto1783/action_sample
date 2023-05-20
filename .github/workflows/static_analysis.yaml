@@ -1,19 +1,15 @@
-name: Static Analysis and Unit Testing
+name: Static Analysis and Testing
 on:
-  # PRが作成or更新された時
+  # PRが作成or更新された時に実行
   pull_request:
     types:
       - opened
       - synchronize
 
-  # main ブランチに push された時
-  push:
-    branches:
-      - main
-
 jobs:
-  static_analysis_and_unit_testing:
-    name: Static Analysis and Unit Testing
+  static_analysis_and_testing:
+    name: Static Analysis and Testing
+    # osはubuntuだと高い？
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -21,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # fvm のバージョンとチャネルを環境変数に設定する
+      # fvm のバージョンとチャネルを環境変数に設定
       - name: Check fvm
         uses: kuhnroyal/flutter-fvm-config-action@v1
 
@@ -73,19 +69,19 @@ jobs:
         run: genhtml coverage/lcov.info -o coverage/html
 
       # ファイル保存&詳細用
-      # カバレッジレポートをアップロード
+      # カバレッジレポートをアップロード（htmlでの詳細ログ）
       - name: Upload Coverage Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: code-coverage
           path: coverage/html
 
-      # カバレッジ率の詳細をテキスト形式で出力
-      - name: Generate lcov Text Coverage Report
-        run: |
-          lcov -l coverage/lcov.info > coverage/coverage-list.txt
+      # # カバレッジ率の詳細をテキスト形式で出力
+      # - name: Generate lcov Text Coverage Report
+      #   run: |
+      #     lcov -l coverage/lcov.info > coverage/coverage-list.txt
 
       # カバレッジ率をジョブログに表示
       - name: Display Coverage Report
         run: |
-          cat coverage/coverage-list.txt
+          cat coverage/test-report.log
